@@ -249,19 +249,6 @@ class ContactModel(BaseModel):
         except Exception as e:
             raise Exception(f"Failed to get added contact: {str(e)}")
 
-    #       id: profileArray[0],
-    #       name: profileArray[1],
-    #       gender: profileArray[2],
-    #       phone: profileArray[3],
-    #       email: profileArray[4],
-    #       joinDate: profileArray[6],
-    #       updatedAt: profileArray[7],
-    #       stats: {
-    #         contacts: 0,
-    #         groups: 0,
-    #         memberSinceYear: new Date(profileArray[6]).getFullYear(),
-    #         lastActive: 'Today'
-    #       }
 
 def get_profile(user_id):
     try:

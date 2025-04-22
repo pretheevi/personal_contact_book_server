@@ -296,7 +296,6 @@ def handle_get_profile(user_id):
                 "message": "User not found"
             }), 404
 
-        print(result)
         return jsonify({
             "status": 200,
             "message": "Profile retrieved successfully",
