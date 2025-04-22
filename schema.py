@@ -11,6 +11,7 @@ class BaseModel:
     def execute_query(query, params=(), fetch_one=False):
         """Helper method to execute database queries"""
         conn = None
+        cursor = None
         try:
             conn = create_connection()
             cursor = conn.cursor()
@@ -23,6 +24,8 @@ class BaseModel:
         except sqlite3.Error as e:
             raise Exception(f"Database error: {str(e)}")
         finally:
+            if cursor:
+                cursor.close()
             if conn:
                 conn.close()
 
@@ -50,6 +53,42 @@ class UserModel(BaseModel):
             return rows_affected > 0
         except Exception as e:
             raise Exception(f"Failed to create user: {str(e)}")
+    
+    @staticmethod
+    def update_user(id, name, gender, phone, email):
+        """Update user details"""
+        query = """
+        UPDATE users
+        SET name = ?, gender = ?, phone = ?, email = ?, updatedAt = CURRENT_DATE
+        WHERE id = ?
+        """
+        try:
+            rows_affected = BaseModel.execute_query(
+                query,
+                (name, gender, phone, email, id)
+            )
+            return rows_affected > 0
+        except Exception as e:
+            raise Exception(f"Failed to update user: {str(e)}")
+    
+    @staticmethod
+    def find_by_id(id):
+        """Find user by id"""
+        query = "SELECT * FROM users WHERE id=?"
+        try:
+            result = BaseModel.execute_query(query, (id,), fetch_one=True)
+            if result:
+                return {
+                    "id": result[0],
+                    "name": result[1],
+                    "gender": result[2],
+                    "phone": result[3],
+                    "email": result[4],
+                    "password": result[5]
+                }
+            return None
+        except Exception as e:
+            raise Exception(f"Failed to find user: {str(e)}")
 
     @staticmethod
     def find_by_email(email):
@@ -81,12 +120,6 @@ class UserModel(BaseModel):
             return True
         except Exception as e:
             raise Exception(f"Failed to update password: {str(e)}")
-
-
-
-
-
-
 
 
 
@@ -215,3 +248,36 @@ class ContactModel(BaseModel):
             return None
         except Exception as e:
             raise Exception(f"Failed to get added contact: {str(e)}")
+
+    #       id: profileArray[0],
+    #       name: profileArray[1],
+    #       gender: profileArray[2],
+    #       phone: profileArray[3],
+    #       email: profileArray[4],
+    #       joinDate: profileArray[6],
+    #       updatedAt: profileArray[7],
+    #       stats: {
+    #         contacts: 0,
+    #         groups: 0,
+    #         memberSinceYear: new Date(profileArray[6]).getFullYear(),
+    #         lastActive: 'Today'
+    #       }
+
+def get_profile(user_id):
+    try:
+        query = """
+                SELECT 
+                    id,
+                    name,
+                    gender,
+                    phone,
+                    email,
+                    createdAt,
+                    updatedAt,
+                    (SELECT COUNT(*) FROM contacts WHERE user_id=users.id) AS contacts
+                FROM users    
+                WHERE id=?"""
+        result = BaseModel.execute_query(query, (user_id,), fetch_one=True)
+        return result if result else None
+    except Exception as e:
+        raise Exception(f"Error retrieving profile: {str(e)}")

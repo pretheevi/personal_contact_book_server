@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 import bcrypt
 print("bcrypt is working!")
-from schema import UserModel, ContactModel
+from schema import UserModel, ContactModel, get_profile
 
 routes = Blueprint("routes", __name__)
 
@@ -282,4 +282,91 @@ def update_contact(contact_id):
         return jsonify({
             "status": 500,
             "message": f"Failed to update contact: {error_message}"
+        }), 500
+    
+
+
+@routes.route("/profile/<int:user_id>", methods=["GET"])
+def handle_get_profile(user_id):
+    try:
+        result = get_profile(user_id)  
+        if not result:
+            return jsonify({
+                "status": 404,
+                "message": "User not found"
+            }), 404
+
+        print(result)
+        return jsonify({
+            "status": 200,
+            "message": "Profile retrieved successfully",
+            "profile": result
+        })
+
+    except Exception as e:
+        return jsonify({
+            "status": 500,
+            "message": f"Failed to get profile: {str(e)}"
+        }), 500
+    
+
+
+
+@routes.route('/update-profile/<int:user_id>', methods=['PUT'])
+def update_profile(user_id):
+    try:
+        data = request.get_json()
+        print(data)
+
+        # Check if user exists
+        user = UserModel.find_by_id(user_id)
+        if not user:
+            return jsonify({
+                "status": 404,
+                "message": "User not found"
+            }), 404
+        
+
+        required_fields = ['name', 'email', 'phone']
+        for field in required_fields:
+            if field not in data or not data[field].strip():
+                return jsonify({
+                    "status": 400,
+                    "message": f'{field.capitalize()} is required'
+                }), 400
+            
+        
+        # Validate email format
+        if '@' not in data['email'] or '.' not in data['email'].split('@')[1]:
+            return jsonify({
+                'success': False,
+                'message': 'Please enter a valid email address'
+            }), 400
+        
+        # Validate phone number (basic validation)
+        if not data['phone'].isdigit() or len(data['phone']) < 10:
+            return jsonify({
+                'success': False,
+                'message': 'Please enter a valid phone number (at least 10 digits)'
+            }), 400
+        
+        id, name, gender, phone, email = user_id, data['name'], data['gender'].lower(), data['phone'], data['email']
+        print(id, name, gender, phone, email)
+
+        # Update user profile
+        result = UserModel.update_user(id, name, gender, phone, email)
+        if not result:
+            return jsonify({
+                "status": 404,
+                "message": "Something went wrong. Profile not updated"
+            }), 404
+
+        return jsonify({
+            "status": 200,
+            "message": 'Profile updated successfully',
+        })
+    except Exception as e:
+        return jsonify({
+            "status": 500,
+            "message": f"Failed to update profile: {str(e)}"
         }), 500
