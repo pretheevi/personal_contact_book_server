@@ -5,6 +5,11 @@ from schema import UserModel, ContactModel, get_profile
 
 routes = Blueprint("routes", __name__)
 
+@routes.route("/health", methods=["GET"])
+def health_check():
+    return {"status": "ok"}
+
+
 def validate_required_fields(data, required_fields):
     """Validate required fields in request data"""
     missing_fields = [field for field in required_fields if not data.get(field)]
